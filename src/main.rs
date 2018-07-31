@@ -1,4 +1,3 @@
-
 mod bing;
 
 mod data;
@@ -16,20 +15,19 @@ extern crate serde_derive;
 extern crate lazy_static;
 
 extern crate clap;
-use clap::{Arg, App, AppSettings};
+use clap::{App, AppSettings, Arg};
 
 extern crate failure;
 
 lazy_static! {
     pub static ref BingPath: PathBuf = {
-        
-        [home_dir().unwrap(),PathBuf::from("Pictures/Bing")]
-                            .iter().collect()
-
+        [home_dir().unwrap(), PathBuf::from("Pictures/Bing")]
+            .iter()
+            .collect()
     };
 }
 
-fn main() -> Result<(),failure::Error> {
+fn main() -> Result<(), failure::Error> {
     check_dir()?;
     check_data()?;
 
@@ -68,8 +66,6 @@ fn main() -> Result<(),failure::Error> {
                             .help("fetch image from saved wallpapers\n  you must have at least one saved local Bing image "))
                         .get_matches();
 
-                        
-
     if matches.is_present("today") {
         get_today()?;
         return Ok(());
@@ -87,8 +83,5 @@ fn main() -> Result<(),failure::Error> {
         return Ok(());
     };
 
-       
-
-    Ok(())    
-
+    Ok(())
 }
