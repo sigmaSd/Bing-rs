@@ -29,7 +29,9 @@ OPTIONS:
     -r, --random                 fetch a random image from Bing images or local wallpapers
                                   example: bing -l -r
 
+# Important
 
+Bing-rs uses `gsettings` command to change wallpaper so its limited to gnome and varients (mate,etc..) for now.
 
 # Credits
 
