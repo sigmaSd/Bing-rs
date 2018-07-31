@@ -1,0 +1,17 @@
+[package]
+name = "bing-rs"
+version = "0.1.0"
+authors = ["Nbiba Bedis <bedisnbiba@gmail.com>"]
+
+
+
+[dependencies]
+serde = "1.0.70"
+serde_derive = "1.0.70"
+reqwest = "0.8.6"
+clap = "2.32.0"
+rand = "0.5.4"
+failure = "0.1.1"
+dirs = "1.0.2"
+lazy_static = "1.0.2"
+chrono = "0.4.5"
