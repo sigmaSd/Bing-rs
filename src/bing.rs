@@ -102,6 +102,10 @@ pub fn current_image() -> String {
     let img_path = String::from_utf8_lossy(&get_img.stdout).to_string();
 
     let img_name: Vec<&str> = img_path.split("Bing/").collect();
-
+    //If the current wallpaper isn't from the Bing folder:
+    //  return  an empty string
+    if img_name.len() < 2 {
+        return "".to_string();
+    }
     img_name[1][..img_name[1].len() - 2].to_string()
 }
