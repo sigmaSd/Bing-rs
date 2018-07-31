@@ -8,7 +8,7 @@ why not!
 ## Usage:
     bing-rs [FLAGS] [OPTIONS]
 
-### FLAGS:
+FLAGS:
 
     -h, --help       Prints help information
     -l, --local      fetch image from saved wallpapers
@@ -16,7 +16,7 @@ why not!
     -t, --today      fetch today's image from bing (needs network)
     -V, --version    Prints version information
 
-### OPTIONS:
+OPTIONS:
 
     -n, --next <next>            get the nth next image (works on local mode only)
                                   example: bing-rs -n 3
