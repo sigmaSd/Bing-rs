@@ -27,5 +27,6 @@ OPTIONS:
                                   example: bing -l -r
 
 
-#Credits
+# Credits
+
 Got the idea from https://github.com/rjstyles/BingWallpaper .
