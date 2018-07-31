@@ -6,7 +6,6 @@ Fetch wallpapers from Bing, made with rust.
 why not!
 
 # Usage:
-
     bing-rs [FLAGS] [OPTIONS]
 
 FLAGS:
@@ -22,9 +21,14 @@ OPTIONS:
     -n, --next <next>            get the nth next image (works on local mode only)
                                   example: bing-rs -n 3
     -p, --previous <previous>    get the nth previous image
-                                  example: bing-rs -p 
+                                  works a bit diffrently depending on local flag:
+                                  if local set:
+                                 previous command will be relative to the current set wallpaper.
+                                  if local is not set:
+                                 previous command will be relative to today's Bing wallpaper.
     -r, --random                 fetch a random image from Bing images or local wallpapers
                                   example: bing -l -r
+
 
 
 # Credits
