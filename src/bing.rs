@@ -78,6 +78,22 @@ impl Bing {
             panic!("Error while writing to database: {}", e);
         }
     }
+    pub fn remove_entry(img: &str) {
+        let mut data_path = BingPath.clone();
+        data_path.push("data");
+        let mut data_file = File::open(&data_path).expect("Error while reading database");
+        let data = read_file(&mut data_file);
+        let mut data: String = data
+            .lines()
+            .filter(|line| !line.contains(img))
+            .map(|line| format!("{}\n", line))
+            .collect();
+        // remove last \n
+        data.pop().unwrap();
+        let mut data_file =
+            File::create(&data_path).expect("Error while removing entry from database");
+        writeln!(data_file, "{}", data);
+    }
 }
 
 //helper functions

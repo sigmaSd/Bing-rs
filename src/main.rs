@@ -48,13 +48,23 @@ fn main() -> Result<(), failure::Error> {
                             .min_values(0)
                             .requires("local")
                             .conflicts_with_all(&["random","previous","today"]))
+                        .arg(Arg::with_name("recall")
+                            .short("R")
+                            .long("reacall")
+                            .requires("local")
+                            .help("recall last wallpaper set")
+                            .conflicts_with_all(&["random","previous","today","delete"]))
+                        .arg(Arg::with_name("delete")
+                            .short("d")
+                            .long("delete")
+                            .requires("local")
+                            .help("delete current wallpaper")
+                            .conflicts_with_all(&["random","previous","today"]))
                         .arg(Arg::with_name("random")
                             .short("r")
                             .long("random")
                             .help("fetch a random image from Bing images or local wallpapers\n example: bing -l -r")
-                            .conflicts_with_all(&["previous","next","today"])
-                            //min_values(0) just to make random appear as option instead of a flag
-                            .min_values(0))
+                            .conflicts_with_all(&["previous","next","today"]))
                         .arg(Arg::with_name("today")
                             .short("t")
                             .long("today")
@@ -82,6 +92,13 @@ fn main() -> Result<(), failure::Error> {
         get_random(&matches)?;
         return Ok(());
     };
+    if matches.is_present("recall") {
+        recall(&matches)?;
+        return Ok(());
+    }
+    if matches.is_present("delete") {
+        delete(&matches)?;
+    }
 
     Ok(())
 }

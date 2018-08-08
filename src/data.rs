@@ -14,9 +14,31 @@ use bing::*;
 use BingPath;
 
 use std::fs::{create_dir, File};
-use std::io;
+use std::io::{self, Write};
 use std::path::Path;
-use std::process::Command;
+use std::process::{Command, Stdio};
+
+pub fn delete(matches: &ArgMatches) -> Result<(), failure::Error> {
+    let current_image = current_image();
+    Bing::remove_entry(&current_image);
+    get_random(matches)?;
+    Command::new("rm")
+        .arg(image_dir(&current_image))
+        .stderr(Stdio::null())
+        .spawn()
+        .expect("Failed to rm current image (Maybe its not in Bing folder?)");
+    Ok(())
+}
+
+pub fn recall(matches: &ArgMatches) -> Result<(), failure::Error> {
+    let mut last_path = BingPath.clone();
+    last_path.push("last");
+    match File::open(last_path) {
+        Ok(mut last) => set_wallpaper(&read_file(&mut last).trim(), None),
+        Err(_) => get_random(matches)?,
+    }
+    Ok(())
+}
 
 //get methods
 pub fn get_previous(matches: &ArgMatches) -> Result<(), failure::Error> {
@@ -168,6 +190,16 @@ fn set_wallpaper(img_name: &str, img_desc: Option<&str>) {
         .arg(format!("file://{}", img_dir.to_str().unwrap()))
         .spawn()
         .expect("Failed to set wallpaper");
+
+    //save last wallpaper name
+    let mut last_path = BingPath.clone();
+    last_path.push("last");
+
+    let mut last = File::create(last_path).expect("error while creating last file");
+    if let Err(e) = writeln!(last, "{}", current_image()) {
+        panic!("error while writing last wallpaper: {}", e);
+    }
+
     notify(img_desc);
 }
 
@@ -180,7 +212,7 @@ fn find_index(table: &[(String, Date<Utc>)], img_name: &str) -> usize {
             return i;
         }
     }
-    panic!("Can't find current image index in database {} ", &img_name)
+    thread_rng().gen_range(0, table.len())
 }
 
 fn previous_index(current_idx: usize, prev_arg: usize, table_len: usize) -> usize {
