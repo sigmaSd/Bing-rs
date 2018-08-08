@@ -32,7 +32,6 @@ fn main() -> Result<(), failure::Error> {
     check_data()?;
 
     let matches = App::new("Bing")
-                        .version("1.0")
                         .about("fetch Bing wallpaper of the day")
                         .setting(AppSettings::ArgRequiredElseHelp)
                         .arg(Arg::with_name("previous")
