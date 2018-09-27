@@ -8,7 +8,7 @@ authors = ["Nbiba Bedis <bedisnbiba@gmail.com>"]
 [dependencies]
 serde = "1.0.70"
 serde_derive = "1.0.70"
-reqwest = "0.8.6"
+reqwest = "0.9.0"
 clap = "2.32.0"
 rand = "0.5.4"
 failure = "0.1.1"
