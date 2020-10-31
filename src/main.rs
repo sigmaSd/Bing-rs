@@ -21,7 +21,12 @@ pub static BINGPATH: Lazy<PathBuf> = {
     })
 };
 
-fn main() -> Result<()> {
+fn main() {
+    if let Err(e) = try_main() {
+        eprintln!("Something happened: {}", e);
+    }
+}
+fn try_main() -> Result<()> {
     check_dir()?;
     check_data()?;
 

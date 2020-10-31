@@ -40,8 +40,14 @@ impl Bing {
         let img = self.images[0].clone().url;
         let mut img = img.replace("/az/hprichbg/rb/", "");
         let cut_idx = img.find('_').unwrap();
-        //println!("{}",cut_idx );
+
         let _ = img.split_off(cut_idx);
+
+        //remove th?id=
+        if img.contains("th?id=OHR.") {
+            img = img.split("/th?id=OHR.").nth(1).unwrap().to_string();
+        }
+
         format!("{}.jpg", img)
     }
     pub fn date(&self) -> String {

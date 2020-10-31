@@ -134,8 +134,8 @@ fn get(n: usize) -> Result<()> {
     let mut img_data = img.image_data();
 
     let mut img_file = File::create(&img_dir)?;
-    //println!("{}",img.image_name());
     io::copy(&mut img_data, &mut img_file)?;
+
     set_wallpaper(&img_name, Some(&img_desc));
 
     Ok(())
