@@ -16,14 +16,13 @@ use std::process::{Command, Stdio};
 use crate::Result;
 
 pub fn delete(matches: &ArgMatches) -> Result<()> {
-    let current_image = current_image();
-    Bing::remove_entry(&current_image);
+    let current_image = current_image()?;
+    Bing::remove_entry(&current_image)?;
     get_random(matches)?;
     Command::new("rm")
         .arg(image_dir(&current_image))
         .stderr(Stdio::null())
-        .spawn()
-        .expect("Failed to rm current image (Maybe its not in Bing folder?)");
+        .spawn()?;
     Ok(())
 }
 
@@ -31,10 +30,9 @@ pub fn recall(matches: &ArgMatches) -> Result<()> {
     let mut last_path = BINGPATH.clone();
     last_path.push("last");
     match File::open(last_path) {
-        Ok(mut last) => set_wallpaper(&read_file(&mut last).trim(), None),
-        Err(_) => get_random(matches)?,
+        Ok(mut last) => set_wallpaper(&read_file(&mut last)?.trim(), None),
+        Err(_) => get_random(matches),
     }
-    Ok(())
 }
 
 //get methods
@@ -43,7 +41,7 @@ pub fn get_previous(matches: &ArgMatches) -> Result<()> {
 
     if matches.is_present("local") {
         let table = get_table()?;
-        let current_image = current_image();
+        let current_image = current_image()?;
 
         //If the current wallpaper isn't from the Bing folder:
         //  return  a random one
@@ -57,7 +55,7 @@ pub fn get_previous(matches: &ArgMatches) -> Result<()> {
 
         let (requested_image, _) = &table[previous_index];
 
-        set_wallpaper(requested_image, None);
+        set_wallpaper(requested_image, None)?;
 
         Ok(())
     } else {
@@ -72,7 +70,7 @@ pub fn get_next(matches: &ArgMatches) -> Result<()> {
     //printprintln!("{}",n );
     if matches.is_present("local") {
         let table = get_table()?;
-        let current_image = current_image();
+        let current_image = current_image()?;
 
         //If the current wallpaper isn't from the Bing folder:
         //  return  a random one
@@ -86,7 +84,7 @@ pub fn get_next(matches: &ArgMatches) -> Result<()> {
 
         let (requested_image, _) = &table[next_index];
 
-        set_wallpaper(requested_image, None);
+        set_wallpaper(requested_image, None)?;
 
         Ok(())
     } else {
@@ -105,29 +103,30 @@ pub fn get_today() -> Result<()> {
 pub fn get_random(matches: &ArgMatches) -> Result<()> {
     if matches.is_present("local") {
         let table = get_table()?;
-        let (img_name, _) = table.choose(&mut thread_rng()).unwrap(); // thread_rng().choose(&table).unwrap();
-        set_wallpaper(img_name, None);
+        let (img_name, _) = table
+            .choose(&mut thread_rng())
+            .ok_or("Error choosing a random image")?; // thread_rng().choose(&table)?;
+        set_wallpaper(img_name, None)?;
         Ok(())
     } else {
         let n: usize = thread_rng().gen_range(0, 8);
-
         get(n)?;
-        //println!("{}", n);
+
         Ok(())
     }
 }
 
 fn get(n: usize) -> Result<()> {
     let img = Bing::image_request(n)?;
-    img.cache();
+    img.cache()?;
     let img_desc = img.image_description();
 
-    let img_name = img.image_name();
+    let img_name = img.image_name()?;
     let img_dir = &image_dir(&img_name);
     let img_dir = Path::new(img_dir);
 
     if img_dir.exists() {
-        set_wallpaper(&img_name, None);
+        set_wallpaper(&img_name, None)?;
         return Ok(());
     }
 
@@ -136,7 +135,7 @@ fn get(n: usize) -> Result<()> {
     let mut img_file = File::create(&img_dir)?;
     io::copy(&mut img_data, &mut img_file)?;
 
-    set_wallpaper(&img_name, Some(&img_desc));
+    set_wallpaper(&img_name, Some(&img_desc))?;
 
     Ok(())
 }
@@ -145,8 +144,8 @@ fn get_table() -> Result<Vec<(String, Date<Utc>)>> {
     let mut table: Vec<(String, String)> = Vec::new();
     let mut data_path = BINGPATH.clone();
     data_path.push("data");
-    let mut data_file = File::open(data_path).expect("Error while reading database");
-    let data = read_file(&mut data_file);
+    let mut data_file = File::open(data_path)?;
+    let data = read_file(&mut data_file)?;
 
     for line in data.lines() {
         let l: Vec<&str> = line.split(' ').collect();
@@ -159,9 +158,9 @@ fn get_table() -> Result<Vec<(String, Date<Utc>)>> {
 
     let mut table: Vec<(_, _)> = table
         .into_iter()
-        .map(|(n, d)| {
-            let dd = Date::<Utc>::from_utc(NaiveDate::parse_from_str(&d, "%Y-%m-%d").unwrap(), Utc);
-            (n, dd)
+        .filter_map(|(n, d)| {
+            let dd = Date::<Utc>::from_utc(NaiveDate::parse_from_str(&d, "%Y-%m-%d").ok()?, Utc);
+            Some((n, dd))
         })
         .collect();
     table.sort();
@@ -169,36 +168,35 @@ fn get_table() -> Result<Vec<(String, Date<Utc>)>> {
     Ok(table)
 }
 
-fn notify(img_desc: Option<&str>) {
+fn notify(img_desc: Option<&str>) -> Result<()> {
     let img_desc = match img_desc {
         Some(desc) => desc,
-        None => return,
+        None => return Ok(()),
     };
-    Command::new("notify-send")
-        .arg(img_desc)
-        .spawn()
-        .expect("Failed to invoke notify command");
+    Command::new("notify-send").arg(img_desc).spawn()?;
+    Ok(())
 }
 
-fn set_wallpaper(img_name: &str, img_desc: Option<&str>) {
+fn set_wallpaper(img_name: &str, img_desc: Option<&str>) -> Result<()> {
     let img_dir = image_dir(&img_name);
     let img_dir = Path::new(&img_dir);
     Command::new("gsettings")
         .args(&["set", "org.gnome.desktop.background", "picture-uri"])
-        .arg(format!("file://{}", img_dir.to_str().unwrap()))
-        .spawn()
-        .expect("Failed to set wallpaper");
+        .arg(format!(
+            "file://{}",
+            img_dir.to_str().ok_or("eror reading img_dir")?
+        ))
+        .spawn()?;
 
     //save last wallpaper name
     let mut last_path = BINGPATH.clone();
     last_path.push("last");
 
-    let mut last = File::create(last_path).expect("error while creating last file");
-    if let Err(e) = writeln!(last, "{}", current_image()) {
-        panic!("error while writing last wallpaper: {}", e);
-    }
+    let mut last = File::create(last_path)?;
+    writeln!(last, "{}", current_image()?)?;
 
-    notify(img_desc);
+    notify(img_desc)?;
+    Ok(())
 }
 
 //helper methods

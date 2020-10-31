@@ -3,7 +3,7 @@ mod bing;
 mod data;
 use data::*;
 
-use self::dirs::home_dir;
+use dirs::home_dir;
 use dirs_next as dirs;
 
 use std::path::PathBuf;
@@ -15,9 +15,9 @@ pub type Result<T> = std::result::Result<T, Box<dyn std::error::Error>>;
 
 pub static BINGPATH: Lazy<PathBuf> = {
     Lazy::new(|| {
-        [home_dir().unwrap(), PathBuf::from("Pictures/Bing")]
-            .iter()
-            .collect()
+        home_dir()
+            .expect("Could not locate home dir")
+            .join("Pictures/Bing")
     })
 };
 
