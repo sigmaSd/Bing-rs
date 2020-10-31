@@ -1,10 +1,9 @@
-extern crate reqwest;
-
+use serde::Deserialize;
 use std::fs::{File, OpenOptions};
 use std::io::prelude::*;
 use std::process::Command;
 
-use BingPath;
+use crate::{Result, BINGPATH};
 
 #[derive(Deserialize)]
 pub struct Bing {
@@ -19,12 +18,12 @@ struct Image {
 }
 
 impl Bing {
-    pub fn image_request(idx: usize) -> reqwest::Result<Bing> {
+    pub fn image_request(idx: usize) -> Result<Bing> {
         let url = &format!(
             "http://www.bing.com/HPImageArchive.aspx?format=js&idx={}&n=1",
             idx
         );
-        reqwest::get(url)?.json()
+        Ok(ureq::get(url).call().into_json_deserialize()?)
     }
 
     fn fallback_image(&self) -> String {
@@ -50,12 +49,12 @@ impl Bing {
         format!("{}-{}-{}", &date[0..4], &date[4..6], &date[6..])
     }
 
-    pub fn image_data(&self) -> Result<reqwest::Response, reqwest::Error> {
-        let client = reqwest::Client::new();
-
-        match client.get(&self.hd_image()).send() {
-            Ok(img) => Ok(img),
-            Err(_) => reqwest::get(&self.fallback_image()),
+    pub fn image_data(&self) -> impl std::io::Read + Send {
+        let resp = ureq::get(&self.hd_image()).call();
+        if resp.ok() {
+            resp.into_reader()
+        } else {
+            ureq::get(&self.fallback_image()).call().into_reader()
         }
     }
 
@@ -64,7 +63,7 @@ impl Bing {
     }
 
     pub fn cache(&self) {
-        let mut data_path = BingPath.clone();
+        let mut data_path = BINGPATH.clone();
         data_path.push("data");
         let mut data = OpenOptions::new()
             .append(true)
@@ -72,14 +71,14 @@ impl Bing {
             .open(data_path.as_path())
             .expect("database not found");
         if read_file(&mut data).find(&self.image_name()).is_some() {
-            return ();
+            return;
         }
         if let Err(e) = writeln!(data, "{} {}", self.image_name(), self.date()) {
             panic!("Error while writing to database: {}", e);
         }
     }
     pub fn remove_entry(img: &str) {
-        let mut data_path = BingPath.clone();
+        let mut data_path = BINGPATH.clone();
         data_path.push("data");
         let mut data_file = File::open(&data_path).expect("Error while reading database");
         let data = read_file(&mut data_file);
@@ -92,7 +91,7 @@ impl Bing {
         data.pop().unwrap();
         let mut data_file =
             File::create(&data_path).expect("Error while removing entry from database");
-        writeln!(data_file, "{}", data);
+        writeln!(data_file, "{}", data).unwrap();
     }
 }
 
@@ -107,7 +106,7 @@ pub fn read_file(f: &mut File) -> String {
 }
 
 pub fn image_dir(img_name: &str) -> String {
-    format!("{}/{}", BingPath.to_str().unwrap(), img_name)
+    format!("{}/{}", BINGPATH.to_str().unwrap(), img_name)
 }
 
 pub fn current_image() -> String {

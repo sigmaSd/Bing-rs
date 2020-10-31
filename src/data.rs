@@ -1,24 +1,21 @@
-extern crate clap;
 use clap::ArgMatches;
 
-extern crate failure;
+use rand::prelude::*;
 
-extern crate rand;
-use self::rand::prelude::*;
+use chrono::prelude::*;
+use chrono::Utc;
 
-extern crate chrono;
-use self::chrono::prelude::*;
-use self::chrono::Utc;
-
-use bing::*;
-use BingPath;
+use crate::bing::*;
+use crate::BINGPATH;
 
 use std::fs::{create_dir, File};
 use std::io::{self, Write};
 use std::path::Path;
 use std::process::{Command, Stdio};
 
-pub fn delete(matches: &ArgMatches) -> Result<(), failure::Error> {
+use crate::Result;
+
+pub fn delete(matches: &ArgMatches) -> Result<()> {
     let current_image = current_image();
     Bing::remove_entry(&current_image);
     get_random(matches)?;
@@ -30,8 +27,8 @@ pub fn delete(matches: &ArgMatches) -> Result<(), failure::Error> {
     Ok(())
 }
 
-pub fn recall(matches: &ArgMatches) -> Result<(), failure::Error> {
-    let mut last_path = BingPath.clone();
+pub fn recall(matches: &ArgMatches) -> Result<()> {
+    let mut last_path = BINGPATH.clone();
     last_path.push("last");
     match File::open(last_path) {
         Ok(mut last) => set_wallpaper(&read_file(&mut last).trim(), None),
@@ -41,7 +38,7 @@ pub fn recall(matches: &ArgMatches) -> Result<(), failure::Error> {
 }
 
 //get methods
-pub fn get_previous(matches: &ArgMatches) -> Result<(), failure::Error> {
+pub fn get_previous(matches: &ArgMatches) -> Result<()> {
     let n: usize = (matches.value_of("previous").unwrap_or("1")).parse()?;
 
     if matches.is_present("local") {
@@ -70,7 +67,7 @@ pub fn get_previous(matches: &ArgMatches) -> Result<(), failure::Error> {
     }
 }
 
-pub fn get_next(matches: &ArgMatches) -> Result<(), failure::Error> {
+pub fn get_next(matches: &ArgMatches) -> Result<()> {
     let n: usize = (matches.value_of("next").unwrap_or("1")).parse()?;
     //printprintln!("{}",n );
     if matches.is_present("local") {
@@ -99,16 +96,16 @@ pub fn get_next(matches: &ArgMatches) -> Result<(), failure::Error> {
     }
 }
 
-pub fn get_today() -> Result<(), failure::Error> {
+pub fn get_today() -> Result<()> {
     get(0)?;
 
     Ok(())
 }
 
-pub fn get_random(matches: &ArgMatches) -> Result<(), failure::Error> {
+pub fn get_random(matches: &ArgMatches) -> Result<()> {
     if matches.is_present("local") {
         let table = get_table()?;
-        let (img_name, _) = thread_rng().choose(&table).unwrap();
+        let (img_name, _) = table.choose(&mut thread_rng()).unwrap(); // thread_rng().choose(&table).unwrap();
         set_wallpaper(img_name, None);
         Ok(())
     } else {
@@ -120,7 +117,7 @@ pub fn get_random(matches: &ArgMatches) -> Result<(), failure::Error> {
     }
 }
 
-fn get(n: usize) -> Result<(), failure::Error> {
+fn get(n: usize) -> Result<()> {
     let img = Bing::image_request(n)?;
     img.cache();
     let img_desc = img.image_description();
@@ -134,7 +131,7 @@ fn get(n: usize) -> Result<(), failure::Error> {
         return Ok(());
     }
 
-    let mut img_data = img.image_data()?;
+    let mut img_data = img.image_data();
 
     let mut img_file = File::create(&img_dir)?;
     //println!("{}",img.image_name());
@@ -144,9 +141,9 @@ fn get(n: usize) -> Result<(), failure::Error> {
     Ok(())
 }
 
-fn get_table() -> Result<Vec<(String, Date<Utc>)>, failure::Error> {
+fn get_table() -> Result<Vec<(String, Date<Utc>)>> {
     let mut table: Vec<(String, String)> = Vec::new();
-    let mut data_path = BingPath.clone();
+    let mut data_path = BINGPATH.clone();
     data_path.push("data");
     let mut data_file = File::open(data_path).expect("Error while reading database");
     let data = read_file(&mut data_file);
@@ -165,7 +162,8 @@ fn get_table() -> Result<Vec<(String, Date<Utc>)>, failure::Error> {
         .map(|(n, d)| {
             let dd = Date::<Utc>::from_utc(NaiveDate::parse_from_str(&d, "%Y-%m-%d").unwrap(), Utc);
             (n, dd)
-        }).collect();
+        })
+        .collect();
     table.sort();
     //println!("{:?}",&table);
     Ok(table)
@@ -174,7 +172,7 @@ fn get_table() -> Result<Vec<(String, Date<Utc>)>, failure::Error> {
 fn notify(img_desc: Option<&str>) {
     let img_desc = match img_desc {
         Some(desc) => desc,
-        None => return (),
+        None => return,
     };
     Command::new("notify-send")
         .arg(img_desc)
@@ -192,7 +190,7 @@ fn set_wallpaper(img_name: &str, img_desc: Option<&str>) {
         .expect("Failed to set wallpaper");
 
     //save last wallpaper name
-    let mut last_path = BingPath.clone();
+    let mut last_path = BINGPATH.clone();
     last_path.push("last");
 
     let mut last = File::create(last_path).expect("error while creating last file");
@@ -231,8 +229,8 @@ fn next_index(current_idx: usize, prev_arg: usize, table_len: usize) -> usize {
 }
 
 //check if dir exists and check database
-pub fn check_dir() -> Result<(), failure::Error> {
-    let dir = BingPath.as_path();
+pub fn check_dir() -> Result<()> {
+    let dir = BINGPATH.as_path();
     //println!("{:?}",&dir);
     if !dir.exists() {
         create_dir(dir)?;
@@ -240,8 +238,8 @@ pub fn check_dir() -> Result<(), failure::Error> {
     Ok(())
 }
 
-pub fn check_data() -> Result<(), failure::Error> {
-    let mut dir = BingPath.clone();
+pub fn check_data() -> Result<()> {
+    let mut dir = BINGPATH.clone();
     dir.push("data");
     //println!("{:?}",&dir);
     if !dir.exists() {

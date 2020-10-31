@@ -3,31 +3,25 @@ mod bing;
 mod data;
 use data::*;
 
-extern crate dirs;
 use self::dirs::home_dir;
+use dirs_next as dirs;
 
 use std::path::PathBuf;
-extern crate serde;
-#[macro_use]
-extern crate serde_derive;
 
-#[macro_use]
-extern crate lazy_static;
-
-extern crate clap;
 use clap::{App, AppSettings, Arg};
+use once_cell::sync::Lazy;
 
-extern crate failure;
+pub type Result<T> = std::result::Result<T, Box<dyn std::error::Error>>;
 
-lazy_static! {
-    pub static ref BingPath: PathBuf = {
+pub static BINGPATH: Lazy<PathBuf> = {
+    Lazy::new(|| {
         [home_dir().unwrap(), PathBuf::from("Pictures/Bing")]
             .iter()
             .collect()
-    };
-}
+    })
+};
 
-fn main() -> Result<(), failure::Error> {
+fn main() -> Result<()> {
     check_dir()?;
     check_data()?;
 

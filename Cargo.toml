@@ -2,16 +2,14 @@
 name = "bing-rs"
 version = "0.1.2"
 authors = ["Nbiba Bedis <bedisnbiba@gmail.com>"]
-
+edition = "2018"
 
 
 [dependencies]
-serde = "1.0.70"
-serde_derive = "1.0.70"
-reqwest = "0.9.0"
-clap = "2.32.0"
-rand = "0.5.4"
-failure = "0.1.1"
-dirs = "1.0.2"
-lazy_static = "1.0.2"
-chrono = "0.4.5"
+serde = { version = "1.0.117", features = ["derive"] }
+clap = "2.33.3"
+rand = "0.7.3"
+dirs-next = "2.0.0"
+chrono = "0.4.19"
+ureq = {version="1.5.1", default-features=false,features=["json"]}
+once_cell = "1.4.1"
