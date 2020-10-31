@@ -11,5 +11,5 @@ clap = "2.33.3"
 rand = "0.7.3"
 dirs-next = "2.0.0"
 chrono = "0.4.19"
-ureq = {version="1.5.1", default-features=false,features=["json"]}
+ureq = {version="1.5.1", default-features=false,features=["tls", "json"]}
 once_cell = "1.4.1"
